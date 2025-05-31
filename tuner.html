@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Realtime Guitar Tuner</title>
+<style>
+  body {
+    margin: 0; padding: 2rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f0f0f3;
+    color: #1c1c1e;
+    text-align: center;
+  }
+
+  /* Tombol kembali di atas */
+  .back-btn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #007aff;
+    padding: 6px 12px;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .back-btn:hover {
+    background-color: rgba(0,122,255,0.1);
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    margin-top: 3rem;
+  }
+  #note {
+    font-size: 5rem;
+    font-weight: 700;
+    margin: 1rem 0;
+  }
+  #detune {
+    font-size: 1.5rem;
+    margin-top: 0.5rem;
+    color: #555;
+  }
+  button#start-btn {
+    background: #007aff;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: background-color 0.3s ease;
+    margin-top: 2rem;
+  }
+  button#start-btn:hover {
+    background: #005ecf;
+  }
+  #status {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: #777;
+  }
+</style>
+</head>
+<body>
+
+<button class="back-btn" onclick="history.back()">← Kembali</button>
+
+<h1>Realtime Guitar Tuner</h1>
+
+<div id="note">-</div>
+<div id="detune">-</div>
+<button id="start-btn">Mulai Tuning</button>
+<div id="status"></div>
+
+<script>
+  // Nada standar gitar (Hz)
+  const notes = [
+    { note: "E2", freq: 82.41 },
+    { note: "A2", freq: 110.00 },
+    { note: "D3", freq: 146.83 },
+    { note: "G3", freq: 196.00 },
+    { note: "B3", freq: 246.94 },
+    { note: "E4", freq: 329.63 },
+  ];
+
+  // Fungsi cari nada terdekat dari frekuensi
+  function findClosestNote(freq) {
+    let minDiff = Infinity;
+    let closest = null;
+    for (let n of notes) {
+      let diff = Math.abs(freq - n.freq);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = n;
+      }
+    }
+    return closest;
+  }
+
+  // Hitung detune: berapa Hz beda dari nada pas
+  function detuneCents(freq, targetFreq) {
+    return 1200 * Math.log2(freq / targetFreq);
+  }
+
+  let audioContext, analyser, dataArray, source;
+  let running = false;
+
+  const noteElem = document.getElementById("note");
+  const detuneElem = document.getElementById("detune");
+  const statusElem = document.getElementById("status");
+  const startBtn = document.getElementById("start-btn");
+
+  startBtn.onclick = async () => {
+    if (running) {
+      stopTuner();
+      startBtn.textContent = "Mulai Tuning";
+      statusElem.textContent = "Tuner dihentikan";
+    } else {
+      startBtn.textContent = "Mengaktifkan...";
+      await startTuner();
+    }
+  };
+
+  async function startTuner() {
+    try {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      source = audioContext.createMediaStreamSource(stream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      dataArray = new Float32Array(analyser.fftSize);
+
+      running = true;
+      startBtn.textContent = "Berhenti";
+      statusElem.textContent = "Tuner aktif, mainkan senar gitar...";
+
+      tick();
+    } catch (err) {
+      statusElem.textContent = "Error akses mikrofon: " + err.message;
+      startBtn.textContent = "Mulai Tuning";
+      running = false;
+    }
+  }
+
+  function stopTuner() {
+    if (audioContext) {
+      audioContext.close();
+      audioContext = null;
+    }
+    running = false;
+    noteElem.textContent = "-";
+    detuneElem.textContent = "-";
+  }
+
+  function autoCorrelate(buffer, sampleRate) {
+    let SIZE = buffer.length;
+    let maxSamples = Math.floor(SIZE / 2);
+    let bestOffset = -1;
+    let bestCorrelation = 0;
+    let rms = 0;
+    let foundGoodCorrelation = false;
+    let correlations = new Array(maxSamples);
+
+    for (let i = 0; i < SIZE; i++) {
+      let val = buffer[i];
+      rms += val * val;
+    }
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.01) return -1;
+
+    let lastCorrelation = 1;
+    for (let offset = 0; offset < maxSamples; offset++) {
+      let correlation = 0;
+      for (let i = 0; i < maxSamples; i++) {
+        correlation += Math.abs(buffer[i] - buffer[i + offset]);
+      }
+      correlation = 1 - (correlation / maxSamples);
+      correlations[offset] = correlation;
+
+      if ((correlation > 0.9) && (correlation > lastCorrelation)) {
+        foundGoodCorrelation = true;
+        if (correlation > bestCorrelation) {
+          bestCorrelation = correlation;
+          bestOffset = offset;
+        }
+      } else if (foundGoodCorrelation) {
+        let shift = (correlations[bestOffset + 1] - correlations[bestOffset - 1]) / correlations[bestOffset];
+        return sampleRate / (bestOffset + 8 * shift);
+      }
+      lastCorrelation = correlation;
+    }
+    if (bestCorrelation > 0.01) {
+      return sampleRate / bestOffset;
+    }
+    return -1;
+  }
+
+  function tick() {
+    if (!running) return;
+
+    analyser.getFloatTimeDomainData(dataArray);
+    const sampleRate = audioContext.sampleRate;
+    const frequency = autoCorrelate(dataArray, sampleRate);
+
+    if (frequency !== -1) {
+      const note = findClosestNote(frequency);
+      const cents = detuneCents(frequency, note.freq);
+      noteElem.textContent = note.note;
+
+      if (Math.abs(cents) < 5) {
+        detuneElem.textContent = "Tuned 🎵";
+        detuneElem.style.color = "green";
+      } else if (cents > 0) {
+        detuneElem.textContent = `Terlalu tinggi (+${cents.toFixed(1)} cents)`;
+        detuneElem.style.color = "red";
+      } else {
+        detuneElem.textContent = `Terlalu rendah (${cents.toFixed(1)} cents)`;
+        detuneElem.style.color = "red";
+      }
+    } else {
+      noteElem.textContent = "-";
+      detuneElem.textContent = "Tidak ada suara terdeteksi";
+      detuneElem.style.color = "#555";
+    }
+
+    requestAnimationFrame(tick);
+  }
+</script>
+
+</body>
+</html>
