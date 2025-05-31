@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LirikKu 🎵 Lirik & Terjemahan Lagu</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1d1d1f;
+    }
+
+    header {
+      background: #ffffffcc;
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      padding: 1rem 2rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+      z-index: 99;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .nav-actions select, .nav-actions a {
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      text-decoration: none;
+      color: #333;
+      background: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .nav-actions a:hover {
+      background: #007aff;
+      color: white;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 2rem;
+    }
+
+    .slider {
+      width: 100%;
+      margin-bottom: 2rem;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .slider img {
+      width: 100%;
+      height: auto;
+      display: none;
+    }
+
+    .slider img.active {
+      display: block;
+    }
+
+    .stories {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      margin-bottom: 2rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .story-card {
+      flex: 0 0 auto;
+      width: 140px;
+      cursor: pointer;
+      border-radius: 16px;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    .story-card:hover {
+      transform: scale(1.03);
+    }
+
+    .story-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+    }
+
+    .story-card p {
+      font-size: 0.85rem;
+      padding: 0.5rem;
+      margin: 0;
+      text-align: center;
+    }
+
+    .search {
+      margin-bottom: 1.5rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .song-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .song-card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      padding: 1rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease;
+    }
+
+    .song-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .song-card img {
+      border-radius: 15px;
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      margin-bottom: 0.75rem;
+    }
+
+    .song-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .song-artist {
+      font-size: 0.95rem;
+      color: #6e6e73;
+    }
+
+    .views {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 0.5rem;
+    }
+
+    .profile {
+      margin-top: 4rem;
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .profile img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #007aff;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 2rem;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  LirikKu 🎶
+  <div class="nav-actions">
+    <select id="countrySelect">
+      <option value="all">🌍 Semua Negara</option>
+      <option value="japan">🇯🇵 Jepang</option>
+      <option value="korea">🇰🇷 Korea</option>
+      <option value="barat">🇺🇸 Barat</option>
+      <option value="indonesia">🇮🇩 Indonesia</option>
+    </select>
+    <a href="tuner.html">🎸 Tuner</a>
+    <a href="#profile">👤 Developer</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Slider -->
+  <div class="slider" id="slider">
+    <img src="https://via.placeholder.com/1000x300?text=Belajar+Gitar+Mudah" class="active">
+    <img src="https://via.placeholder.com/1000x300?text=Chord+Lagu+Viral">
+    <img src="https://via.placeholder.com/1000x300?text=Translate+Lagu+Jepang+dan+Korea">
+  </div>
+
+  <!-- Stories -->
+  <div class="stories">
+    <div class="story-card" onclick="window.location.href='story1.html'">
+      <img src="https://i.ytimg.com/vi/abc123/hqdefault.jpg" alt="Tutorial Gitar Dasar">
+      <p>Tutorial Gitar Dasar</p>
+    </div>
+    <div class="story-card" onclick="window.location.href='story2.html'">
+      <img src="https://i.ytimg.com/vi/def456/hqdefault.jpg" alt="Belajar Chord Am">
+      <p>Belajar Chord Am</p>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search">
+    <input type="text" id="searchInput" placeholder="Cari lagu atau artis...">
+  </div>
+
+  <!-- Daftar Lagu -->
+  <div class="song-list" id="songList">
+    <a href="#" class="song-card">
+      <img src="https://via.placeholder.com/400x200?text=Lagu1" />
+      <div class="song-title">Unforgiven</div>
+      <div class="song-artist">Metallica</div>
+      <div class="views">Dilihat 1.234x</div>
+    </a>
+    <a href="#" class="song-card">
+      <img src="https://via.placeholder.com/400x200?text=Lagu2" />
+      <div class="song-title">Blue Bird</div>
+      <div class="song-artist">Ikimono Gakari</div>
+      <div class="views">Dilihat 2.567x</div>
+    </a>
+  </div>
+
+  <!-- Profil Developer -->
+  <div class="profile" id="profile">
+    <img src="https://via.placeholder.com/80x80?text=👨‍💻" alt="Dev">
+    <div>
+      <h3>Hexahustle Dev</h3>
+      <p>Pembuat website ini. Fokus pada konten musik, edukasi, dan pengembangan web tanpa login.</p>
+      <p>Email: <a href="mailto:hexahustle@gmail.com">hexahustle@gmail.com</a></p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  © 2025 LirikKu. Dibuat dengan 🎧 oleh Hexahustle Dev
+</footer>
+
+<!-- Script Slider -->
+<script>
+  const sliderImages = document.querySelectorAll("#slider img");
+  let currentSlide = 0;
+
+  setInterval(() => {
+    sliderImages[currentSlide].classList.remove("active");
+    currentSlide = (currentSlide + 1) % sliderImages.length;
+    sliderImages[currentSlide].classList.add("active");
+  }, 3000);
+</script>
+
+</body>
+</html>
